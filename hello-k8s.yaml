@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-ns
+spec:
+  finalizers:
+  - kubernetes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-configmap
+  namespace: hello-ns
+data:
+  index.html: |
+    <html>
+    <h1>Welcome!</h1>
+    </br>
+    <h1>Greetings from Hello Service!</h1>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-deployment
+  namespace: hello-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      volumes:
+      - name: index-file
+        configMap:
+          name: hello-configmap
+      containers:
+      - name: api
+        image: nginx
+        env:
+        - name: PARAM1
+          value: "Value1"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: index-file
+            mountPath: /usr/share/nginx/html/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-service
+  namespace: hello-ns
+  labels:
+    app: hello-service
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 80
+  selector:
+    app: hello
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    #alb.ingress.kubernetes.io/certificate-arn: AWS_CERT_ARN
+    alb.ingress.kubernetes.io/group.name: prod-eks
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    #uncomment with sert arn alb.ingress.kubernetes.io/listen-ports: '[ {"HTTP":80}, {"HTTPS":443}]' 
+    alb.ingress.kubernetes.io/listen-ports: '[ {"HTTP":80}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/success-codes: 200,302
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=600
+    alb.ingress.kubernetes.io/target-type: ip
+    kubernetes.io/ingress.class: alb
+  name: hello-ingress
+  namespace: hello-ns
+spec:
+  rules:
+  - host: '*.truckman3.com'
+    http:
+      paths:
+      - backend:
+          service:
+            name: hello-service
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: hello-service
+            port:
+              number: 8080
+        path: /*
+        pathType: ImplementationSpecific
+[root@ec2-admin hello]# vi hello-k8s.html 
+[root@ec2-admin hello]# cat hello-k8s.html 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-ns
+spec:
+  finalizers:
+  - kubernetes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-configmap
+  namespace: hello-ns
+data:
+  index.html: |
+    <html>
+    <h1>Welcome!</h1>
+    </br>
+    <h1>Greetings from Hello Service!</h1>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-deployment
+  namespace: hello-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      volumes:
+      - name: index-file
+        configMap:
+          name: hello-configmap
+      containers:
+      - name: api
+        image: nginx
+        env:
+        - name: PARAM1
+          value: "Value1"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: index-file
+            mountPath: /usr/share/nginx/html/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-service
+  namespace: hello-ns
+  labels:
+    app: hello-service
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 80
+  selector:
+    app: hello
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    #alb.ingress.kubernetes.io/certificate-arn: AWS_CERT_ARN
+    alb.ingress.kubernetes.io/group.name: prod-eks
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    #uncomment with sert arn alb.ingress.kubernetes.io/listen-ports: '[ {"HTTP":80}, {"HTTPS":443}]' 
+    alb.ingress.kubernetes.io/listen-ports: '[ {"HTTP":80}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/success-codes: 200,302
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=600
+    alb.ingress.kubernetes.io/target-type: ip
+    kubernetes.io/ingress.class: alb
+  name: hello-ingress
+  namespace: hello-ns
+spec:
+  rules:
+  - host: '*.yourdomain.com'
+    http:
+      paths:
+      - backend:
+          service:
+            name: hello-service
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: hello-service
+            port:
+              number: 8080
+        path: /*
+        pathType: ImplementationSpecific
