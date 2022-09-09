@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-deployment
+  namespace: hello-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      volumes:
+        - name: index-file
+          configMap:
+            name: hello-configmap
+      containers:
+        - ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: 2GB
+              cpu: ".5"
+            requests:
+              memory: 1GB
+              cpu: ".25"
+          env:
+            - name: PARAM1
+              value: Value1
+            - name: PARAM2
+              valueFrom:
+                secretKeyRef:
+                  name: hello-secret
+                  key: key1
+          volumeMounts:
+            - name: index-file
+              mountPath: /usr/share/nginx/html/
+          name: api
+          image: nginx
+          imagePullPolicy: Always
+      serviceAccountName: hello-sa

@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: StorageClass
+metadata:
+  name: hello-sc
